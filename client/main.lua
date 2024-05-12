@@ -5,7 +5,7 @@ local PlayerJob = {}
 local copCount = 0
 local exploded = false
 
-AddEventHandler('police:SetCopCount', function(amount)
+RegisterNetEvent('police:SetCopCount', function(amount)
 	copCount = amount
 end)
 
