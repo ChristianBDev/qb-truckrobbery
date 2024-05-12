@@ -42,6 +42,6 @@ Config.Times = { -- Times in seconds.
 Config.Rewards = {
 	cash  = math.random(1000, 2000),
 	items = { --Quantity of items
-		['markedbills'] = math.random(1, 5)
+		['markedbills'] = math.random(5000, 10000)
 	}
 }

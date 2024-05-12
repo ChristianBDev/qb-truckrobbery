@@ -9,12 +9,16 @@ function SpawnTruck()
 	local plate = 'ARMD' .. math.random(1000, 9999)
 	local typeOfVeh = QBCore.Shared.Vehicles[Config.Truck.model].type
 	local locOfVeh = Config.Truck.spawnlocations[math.random(1, #Config.Truck.spawnlocations)]
-	truck = CreateVehicleServerSetter(GetHashKey(Config.Truck.model), typeOfVeh, locOfVeh.x, locOfVeh.y, locOfVeh.z, 0.0)
+	truck = CreateVehicleServerSetter(Config.Truck.model, typeOfVeh, locOfVeh.x, locOfVeh.y, locOfVeh.z, 0.0)
+	if truck then
+		TruckBlip = AddBlipForCoord(locOfVeh.x, locOfVeh.y, locOfVeh.z)
+		SetBlipSprite(TruckBlip, 67)
+	else
+		AddBlipForEntity(truck)
+	end
 	Wait(100)
 	truckNetId = NetworkGetNetworkIdFromEntity(truck)
 	SetVehicleNumberPlateText(truck, plate)
-	TruckBlip = AddBlipForCoord(locOfVeh.x, locOfVeh.y, locOfVeh.z)
-	SetBlipSprite(TruckBlip, 67)
 	return truckNetId
 end
 
@@ -53,22 +57,24 @@ function StartMission()
 end
 
 function IssueRewards(source)
-	local Player = QBCore.Functions.GetPlayer(source)
-	Reward = Config.Rewards
-	local chance = math.random(1, 100)
+    local Player = QBCore.Functions.GetPlayer(source)
+    Reward = Config.Rewards
+    local chance = math.random(1, 100)
 
-	if chance >= 85 then
-		TriggerClientEvent('inventory:client:ItemBox', Player, QBCore.Shared.Items['security_card_01'], 'add')
-	end
-	assert(Reward, 'Please check the config file for the rewards table')
-	Player.Functions.AddMoney('cash', Reward.cash)
-	for k, v in pairs(Reward.items) do
-		if Player.Functions.AddItem(k, v) then
-			TriggerClientEvent('inventory:client:ItemBox', source, QBCore.Shared.Items[k], 'add')
-		end
-	end
-	Wait(Config.Times.issuedRewardsTimer * 1000)
-	FinishMission()
+    if chance >= 85 then
+		Player.Functions.AddItem('security_card_01', 1, false)
+        -- TriggerClientEvent('inventory:client:ItemBox', Player, QBCore.Shared.Items['security_card_01'], 'add')
+    end
+    assert(Reward, 'Please check the config file for the rewards table')
+    Player.Functions.AddMoney('cash', Reward.cash)
+    for k, v in pairs(Reward.items) do
+        local info = {worth = v}
+        if k == 'markedbills' then
+            Player.Functions.AddItem('markedbills', math.random(1, 5), false, info)
+        end
+    end
+    Wait(Config.Times.issuedRewardsTimer * 1000)
+    FinishMission()
 end
 
 function StartCooldown()
