@@ -275,10 +275,10 @@ function StartMission()
 		exports['LegacyFuel']:SetFuel(truck, 100)
 		SetVehicleDoorsLocked(truck, 2)
 
-		local dist = #(GetEntityCoords(PlayerPedId(), false) - GetEntityCoords(truck))
+		local distToTruck = #(GetEntityCoords(PlayerPedId(), false) - GetEntityCoords(truck))
 
 		if DoesEntityExist(truck) then
-			local dist = #(GetEntityCoords(PlayerPedId(), false) - GetEntityCoords(truck))
+			local distToTruck = #(GetEntityCoords(PlayerPedId(), false) - GetEntityCoords(truck))
 			if dist <= 100 then
 				EjectFrontGuards()
 				TruckTarget(truck)
@@ -333,10 +333,6 @@ function EjectRearGuards()
 		end
 	end
 end
-
-RegisterCommand('test', function()
-	StartMission()
-end)
 
 -- Cleanup
 function Cleanup()

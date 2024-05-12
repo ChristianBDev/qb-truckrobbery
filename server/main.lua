@@ -63,7 +63,6 @@ function IssueRewards(source)
 
     if chance >= 85 then
 		Player.Functions.AddItem('security_card_01', 1, false)
-        -- TriggerClientEvent('inventory:client:ItemBox', Player, QBCore.Shared.Items['security_card_01'], 'add')
     end
     assert(Reward, 'Please check the config file for the rewards table')
     Player.Functions.AddMoney('cash', Reward.cash)
@@ -100,7 +99,7 @@ end
 
 function FinishMission()
 	DeleteAllEntities()
-	RemoveBlip(TruckBlip) -- Fix
+	RemoveBlip(TruckBlip)
 	activeJob = false
 	StartCooldown()
 end
