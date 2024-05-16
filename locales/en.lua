@@ -4,6 +4,7 @@ local Translations = {
 		['failed_doors'] = 'You failed to unlock the doors!',
 		['failed_mission'] = 'You have failed, Please Try Again!',
 		['active_mission'] = 'There is already an active mission or you are on cooldown!',
+		['already_looted'] = 'You have already looted the truck!',
 	},
 	success = {
 		['start_misssion'] = 'You have started a Mission!',

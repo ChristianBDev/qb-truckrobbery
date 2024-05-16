@@ -56,6 +56,13 @@ function StartMission()
 	return truck, guards
 end
 
+RegisterNetEvent('qb-truckrobbery:server:RemoveItem', function()
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    Player.Functions.RemoveItem(Config.StartItem, 1)
+    TriggerClientEvent('inventory:client:ItemBox', PlayerPedId(), Config.StartItem, 'remove')
+end)
+
 function IssueRewards(source)
     local Player = QBCore.Functions.GetPlayer(source)
     Reward = Config.Rewards
