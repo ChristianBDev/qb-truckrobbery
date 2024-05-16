@@ -70,7 +70,7 @@ function LootAnim()
 		{
 			model = 'prop_cs_heist_bag_02',
 			bone = GetEntityBoneIndexByName(PlayerPedId(), 'SKEL_R_Hand'),
-			coords = { x = 0.0, y = 0.0, z = 0.0 },
+			coords = { x = 0.2, y = -0.2, z = -0.1 },
 			rotation = { x = 0.0, y = 0.0, z = 0.0 },
 		}, {}, function()
 			SetCurrentPedWeapon(PlayerPedId(), weaponHash, true) -- Give back the weapon
