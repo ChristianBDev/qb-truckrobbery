@@ -2,17 +2,13 @@ local Translations = {
 	error = {
 		['failed_bomb'] = 'You failed to plant the bomb!',
 		['failed_doors'] = 'You failed to unlock the doors!',
-		['failed_mission'] = 'You have failed, Please Try Again!',
-		['active_mission'] = 'There is already an active mission or you are on cooldown!',
-		['already_looted'] = 'You have already looted the truck!',
+		['active_mission'] = 'There is already an active mission or you are on cooldown!'
 	},
 	success = {
 		['start_misssion'] = 'You have started a Mission!',
-		['minigame'] = 'You have passed the minigame!',
 		['planted'] = 'You have planted the bomb!',
 		['looting'] = 'You have looted the truck!',
-		['doors'] = 'You have unlocked the doors!',
-		['robbery'] = 'You have robbed the truck!'
+		['doors'] = 'You have unlocked the doors!'
 	},
 	progress = {
 		['planting'] = 'Planting Bomb...',

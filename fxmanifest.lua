@@ -6,18 +6,19 @@ description 'Truck Robbery'
 version '1.0.0'
 
 shared_scripts {
-	'@qb-core/shared/locale.lua',
-	'locales/en.lua',
-	'locales/*.lua',
-	'config.lua',
+  '@qb-core/shared/locale.lua',
+  'locales/en.lua',
+  'locales/*.lua',
+  'shared/config.lua',
 }
 
 server_scripts {
-	'server/*.lua',
+  'server/*.lua',
 }
 
 client_scripts {
-	'client/*.lua',
+  'client/*.lua',
 }
+
 
 lua54 'yes'
