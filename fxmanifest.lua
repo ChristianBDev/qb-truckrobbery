@@ -1,7 +1,7 @@
 fx_version 'cerulean'
 game 'gta5'
 
-author 'ChristianBDev & Jay60 & QBCore Framework Devs'
+author 'Luna & jaysixty'
 description 'Truck Robbery'
 version '1.0.0'
 

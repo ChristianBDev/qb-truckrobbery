@@ -9,12 +9,12 @@ exports('IsActive', function()
   return activeJob
 end)
 
-local spawnPed = function()
+local function spawnPed()
   startPed = CreatePed(4, Config.StartPed.model, Config.StartPed.coords.x, Config.StartPed.coords.y, Config.StartPed.coords.z, Config.StartPed.coords.w, false, true)
   startPedNetId = NetworkGetNetworkIdFromEntity(startPed)
 end
 
-local spawnGuards = function()
+local function spawnGuards()
   for i = 1, Config.Guards.number < 5 and Config.Guards.number or 4 do
     local spawnGuard = CreatePedInsideVehicle(truck, 4, Config.Guards.model, i - 2, true, true) -- Change seat val to i - 2
     while not DoesEntityExist(spawnGuard) do Wait(10) end
@@ -28,13 +28,12 @@ local spawnGuards = function()
   return guards
 end
 
-local spawnTruck = function()
+local function spawnTruck()
   if truck then return end
   local plate = 'ARMD' .. math.random(1000, 9999)
   local locOfVeh = Config.Truck.spawnlocations[math.random(1, #Config.Truck.spawnlocations)]
   truck = CreateVehicle(Config.Truck.model, locOfVeh.x, locOfVeh.y, locOfVeh.z, locOfVeh.w, true, true)
   Wait(100)
-  TruckBlip = AddBlipForCoord(GetEntityCoords(truck))
   SetBlipSprite(TruckBlip, 67)
   SetVehicleNumberPlateText(truck, plate)
   truckNetId = NetworkGetNetworkIdFromEntity(truck)
@@ -43,37 +42,37 @@ local spawnTruck = function()
   return truckNetId
 end
 
-local deleteTruck = function()
+local function deleteTruck()
   if not truck then return end
   truck = NetworkGetEntityFromNetworkId(truckNetId)
   if DoesEntityExist(truck) then DeleteEntity(truck) end
   truck = nil
 end
 
-local deleteGuards = function()
+local function deleteGuards()
   if #guards == 0 then return end
   for i = 1, #guards do
     if DoesEntityExist(guards[i].id) then DeleteEntity(guards[i].id) end
   end
 end
 
-local deletePed = function()
+local function deletePed()
   if DoesEntityExist(startPed) then DeleteEntity(startPed) end
 end
 
-local deleteAllEntities = function(keepStartPed)
-  if not keepStartPed then deletePed() end
+local function deleteAllEntities()
+  deletePed()
   deleteGuards()
   deleteTruck()
 end
 
-local startJob = function()
+local function startJob()
   activeJob = true
   local truck, guards = spawnTruck(), spawnGuards()
   return truck, guards
 end
 
-local updateTruckStatus = function(status)
+local function updateTruckStatus(status)
   local avalableStatus = {
     ['guarded'] = true,
     ['unguarded'] = true,
@@ -93,9 +92,9 @@ function StartCooldown()
   end)
 end
 
-local FinishMission = function()
+local function FinishMission()
   activeJob = false
-  deleteAllEntities(true)
+  deleteAllEntities()
   StartCooldown()
 end
 

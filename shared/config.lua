@@ -4,7 +4,7 @@ Config = Config or {}
 
 Config.StartPed = {
   model = `MP_M_SecuroGuard_01`,
-  coords = vector4(-4.46, -732.81, 32.27, 157.16),
+  coords = vector4(2.91, -713.55, 32.48, 337.56),
 }
 
 Config.StartItem = 'thermite' --Item needed to start the job
