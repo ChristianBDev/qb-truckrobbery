@@ -3,9 +3,8 @@
 Armored Truck Robbery For QB-Core
 
 # To-Do
-- Add Rewards
-- Fix Truck Blip on Mission Finish
-- Fix Animation for Looting
+- Fix Server sided spawning for trucks and Guards
+- Fix Truck spawning stuck in one spot across map 
 
 # License
     QBCore Framework
