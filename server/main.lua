@@ -2,7 +2,7 @@ local QBCore = exports['qb-core']:GetCoreObject()
 local AddStateBagChangeHandler = QBCore.Functions.AddStateBagChangeHandler
 local activeJob = false
 local onCooldown = false
-local startPed, startPedNetId, truck, truckNetId
+local truck, truckNetId
 local guards = {}
 local truckStatus
 
