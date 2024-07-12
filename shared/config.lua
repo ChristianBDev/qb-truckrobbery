@@ -12,7 +12,6 @@ Config.StartItem = 'thermite' --Item needed to start the job
 Config.Truck = {
   model = `stockade`,
   spawnlocations = {
-    vector4(-9.6, -727.25, 32.29, 158.25),
     vector4(-1327.77, -90.02, 49.45, 359.51),
     vector4(-2029.88, -260.35, 23.39, 109.32),
     vector4(-896.9, -1532.81, 5.02, 96.55),

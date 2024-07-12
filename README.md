@@ -1,12 +1,13 @@
-
 # qb-truckrobbery
+
 Armored Truck Robbery For QB-Core
 
 # To-Do
-- Fix Server sided spawning for trucks and Guards
-- Fix Truck spawning stuck in one spot across map 
+
+-   Fix the truck states
 
 # License
+
     QBCore Framework
     Copyright (C) 2021 Joshua Eger
 

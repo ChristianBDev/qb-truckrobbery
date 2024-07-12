@@ -2,6 +2,7 @@ QBCore = exports['qb-core']:GetCoreObject()
 startPed = nil
 truck = nil
 guards = nil
+status = nil
 truckStatus = nil
 TruckBlip = nil
 
@@ -10,7 +11,8 @@ function isAtRearOfTruck()
 end
 
 function updateTruckStatus(state)
-  TriggerServerEvent('qb-truckrobbery:server:UpdateTruckStatus', state)
+  status = state
+  TriggerServerEvent('qb-truckrobbery:server:UpdateTruckStatus', status)
 end
 
 function loadAnim(dict)
@@ -158,74 +160,91 @@ function addTargetToTruck(truck)
   end
 end
 
-function startJob()
-  QBCore.Functions.TriggerCallback('qb-truckrobbery:server:StartJob', function(activeJob, retTruck, retguards)
-    if activeJob then return QBCore.Functions.Notify(Lang:t('error.active_mission'), 'error') end
-    truck = NetworkGetEntityFromNetworkId(retTruck)
-    guards = retguards
-    driver = NetworkGetEntityFromNetworkId(guards[1].netId)
-    QBCore.Functions.Notify(Lang:t('success.start_misssion'), 'success')
-    while not DoesEntityExist(driver) or not DoesEntityExist(truck) do
-      Wait(0)
+RegisterNetEvent('qb-truckrobbery:client:StartMission', function(activeJob, truckCoords)
+  if activeJob then return QBCore.Functions.Notify(Lang:t('error.active_mission'), 'error') end
+  QBCore.Functions.Notify(Lang:t('success.start_misssion'), 'success')
+
+  TruckBlip = AddBlipForRadius(truckCoords.x, truckCoords.y, truckCoords.z, 250.0)
+  SetBlipHighDetail(TruckBlip, true)
+  SetBlipAlpha(TruckBlip, 90)
+  SetBlipRoute(TruckBlip, true)
+  SetBlipRouteColour(TruckBlip, 6)
+  SetBlipColour(TruckBlip, 1)
+
+  local truckSpawn
+
+  truckSpawn = BoxZone:Create(truckCoords, 300, 300, {
+    name = 'truck_spawned',
+    debugPoly = true,
+    useZ = true,
+  })
+
+  if not truckSpawn then return end
+  truckSpawn:onPlayerInOut(function(isPointInside)
+    if isPointInside then
+      QBCore.Functions.TriggerCallback('qb-truckrobbery:server:spawnTruck', function(truckNetId)
+        updateTruckStatus('guarded')
+        local truck = NetworkGetEntityFromNetworkId(truckNetId)
+        local driver = GetPedInVehicleSeat(truck, -1)
+
+        while not DoesEntityExist(driver) or not DoesEntityExist(truck) do
+          Wait(0)
+        end
+        TruckBlip = AddBlipForEntity(truck)
+        SetBlipSprite(TruckBlip, 67)
+        SetBlipColour(TruckBlip, 1)
+        SetBlipFlashes(TruckBlip, true)
+        SetBlipRoute(TruckBlip, true)
+        SetBlipRouteColour(TruckBlip, 6)
+        BeginTextCommandSetBlipName('STRING')
+        AddTextComponentString('Armored Truck')
+        EndTextCommandSetBlipName(TruckBlip)
+        -- TaskVehicleDriveToCoordLongrange(driver, truck, Config.Route[math.random(1, #Config.Route)], 80.0, 786603)
+        SetVehicleEngineOn(truck, true, true, false)
+        addTargetToTruck(truck)
+      end, truckCoords)
+    else
+      return QBCore.Functions.Notify(Lang:t('info.truck_spawn'), 'success')
     end
-    TruckBlip = AddBlipForEntity(truck)
-    SetEntityAsMissionEntity(truck, true, true)
-    SetBlipSprite(TruckBlip, 477)
-    SetBlipColour(TruckBlip, 5)
-    SetBlipRoute(TruckBlip, true)
-    SetBlipRouteColour(TruckBlip, 5)
-    TaskVehicleDriveToCoordLongrange(driver, truck, Config.Route[math.random(1, #Config.Route)], 80.0, 786603)
-    SetVehicleEngineOn(truck, true, true, false)
-    if not guards then return end
-    addTargetToTruck(truck)
   end)
-end
+  truckSpawn = isPointInside
+end)
+
+RegisterCommand('test', function()
+  TriggerServerEvent('qb-truckrobbery:server:StartJob')
+end)
 
 function setupPed()
-  QBCore.Functions.TriggerCallback('qb-truckrobbery:server:GetPed', function(retPed)
-    startPed = NetworkGetEntityFromNetworkId(retPed)
-    SetBlockingOfNonTemporaryEvents(startPed, true)
-    FreezeEntityPosition(startPed, true)
-    SetEntityInvincible(startPed, true)
-    exports['qb-target']:AddTargetEntity(startPed, {
-      options = {
-        {
-          icon = 'fas fa-truck-loading',
-          label = Lang:t('info.startmission'),
-          item = Config.StartItem,
-          action = startJob,
-        },
+  local startPed = CreatePed(4, Config.StartPed.model, Config.StartPed.coords.x, Config.StartPed.coords.y, Config.StartPed.coords.z - 1, Config.StartPed.coords.w, false, true)
+
+  SetBlockingOfNonTemporaryEvents(startPed, true)
+  FreezeEntityPosition(startPed, true)
+  SetEntityInvincible(startPed, true)
+  exports['qb-target']:AddTargetEntity(startPed, {
+    options = {
+      {
+        icon = 'fas fa-truck-loading',
+        label = Lang:t('info.startmission'),
+        item = Config.StartItem,
+        canInteract = function()
+          return QBCore.Functions.GetPlayerData().job.type ~= 'leo'
+        end,
+        action = function()
+          TriggerServerEvent('qb-truckrobbery:server:StartJob')
+        end,
+        debug = true,
       },
-      distance = 2.5
-    })
-  end)
-end
-
-function setUpScript()
-  setupPed()
-end
-
-function cleanUp()
-  exports['qb-target']:RemoveTargetEntity(startPed)
-  exports['qb-target']:RemoveTargetEntity(truck)
-  RemoveBlip(TruckBlip)
-  for _, v in pairs(truckStatus) do
-    if v.bone then
-      exports['qb-target']:RemoveTargetBone(v.bone, v.label)
-    end
-  end
+    },
+    distance = 2.5
+  })
+  if DoesEntityExist(startPed) then return end
 end
 
 RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
-  setUpScript()
+  setupPed()
 end)
 
 RegisterNetEvent('onResourceStart', function(resoucename)
   if GetCurrentResourceName() ~= resoucename then return end
-  setUpScript()
-end)
-
-RegisterNetEvent('onResourceStop', function(resoucename)
-  if GetCurrentResourceName() ~= resoucename then return end
-  cleanUp()
+  setupPed()
 end)

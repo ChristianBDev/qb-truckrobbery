@@ -3,15 +3,9 @@ truckStatus = {
     bone = 'door_dside_f',
     targetOptions = {
       action = function()
-        if not Config.Minigames['Unlock Doors']() then return QBCore.Notify(Lang:t('error.failed_doors'), 'error') end
-        if not guards[1] or not truck then return end
         Config.PoliceAlert()
-        for _, v in pairs(guards) do
-          local guard = NetworkGetEntityFromNetworkId(v.netId)
-          if not DoesEntityExist(guard) then return end
-          EjectFrontGuards()
-          updateTruckStatus('unguarded')
-        end
+        EjectFrontGuards()
+        updateTruckStatus('unguarded')
       end,
       icon = 'fas fa-door-open',
       label = Lang:t('info.unlockdoors'),
@@ -51,7 +45,6 @@ truckStatus = {
         faceTruck()
         doLootAnim()
         updateTruckStatus('looted')
-        cleanUp(true)
       end,
       icon = 'fas fa-truck-loading',
       label = Lang:t('info.loottruck'),

@@ -1,18 +1,13 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 local activeJob = false
 local onCooldown = false
-local startPed, startPedNetId, truck, truckNetId, TruckBlip
+local startPed, startPedNetId, truck, truckNetId
 local guards = {}
 local truckStatus
 
 exports('IsActive', function()
   return activeJob
 end)
-
-local function spawnPed()
-  startPed = CreatePed(4, Config.StartPed.model, Config.StartPed.coords.x, Config.StartPed.coords.y, Config.StartPed.coords.z, Config.StartPed.coords.w, false, true)
-  startPedNetId = NetworkGetNetworkIdFromEntity(startPed)
-end
 
 local function spawnGuards()
   for i = 1, Config.Guards.number < 5 and Config.Guards.number or 4 do
@@ -28,19 +23,17 @@ local function spawnGuards()
   return guards
 end
 
-local function spawnTruck()
+QBCore.Functions.CreateCallback('qb-truckrobbery:server:spawnTruck', function(source, cb, coords)
   if truck then return end
   local plate = 'ARMD' .. math.random(1000, 9999)
-  local locOfVeh = Config.Truck.spawnlocations[math.random(1, #Config.Truck.spawnlocations)]
-  truck = CreateVehicle(Config.Truck.model, locOfVeh.x, locOfVeh.y, locOfVeh.z, locOfVeh.w, true, true)
+  truck = CreateVehicle(Config.Truck.model, coords, true, true)
   Wait(100)
-  SetBlipSprite(TruckBlip, 67)
+  spawnGuards()
   SetVehicleNumberPlateText(truck, plate)
   truckNetId = NetworkGetNetworkIdFromEntity(truck)
-  truckStatus = 'guarded' --MUST BE CHANGED TO guarded
-  Entity(truck).state:set('status', truckStatus, true)
-  return truckNetId
-end
+  Entity(truck).state:set('status', 'guarded', true)
+  cb(truckNetId)
+end)
 
 local function deleteTruck()
   if not truck then return end
@@ -56,20 +49,13 @@ local function deleteGuards()
   end
 end
 
-local function deletePed()
-  if DoesEntityExist(startPed) then DeleteEntity(startPed) end
-end
-
-local function deleteAllEntities()
-  deletePed()
-  deleteGuards()
-  deleteTruck()
-end
-
 local function startJob()
-  activeJob = true
-  local truck, guards = spawnTruck(), spawnGuards()
-  return truck, guards
+  if onCooldown then return end
+  if not activeJob then
+    local coords = Config.Truck.spawnlocations[math.random(1, #Config.Truck.spawnlocations)]
+    TriggerClientEvent('qb-truckrobbery:client:StartMission', source, activeJob, coords)
+    activeJob = true
+  end
 end
 
 local function updateTruckStatus(status)
@@ -89,6 +75,7 @@ function StartCooldown()
   onCooldown = true
   SetTimeout(Config.Times.cooldown * 1000, function()
     onCooldown = false
+    activeJob = false
   end)
 end
 
@@ -130,16 +117,7 @@ end
 
 QBCore.Functions.CreateCallback('qb-truckrobbery:server:StartJob', function(source, cb)
   if activeJob then return cb(activeJob) end
-  local truck, guards = startJob()
-  cb(false, truck, guards)
-end)
-
-QBCore.Functions.CreateCallback('qb-truckrobbery:server:GetPed', function(_, cb)
-  cb(startPedNetId)
-end)
-
-QBCore.Functions.CreateCallback('qb-truckrobbery:server:GetTruckStatus', function(source, cb)
-  cb(truckStatus)
+  cb(false, startJob())
 end)
 
 RegisterNetEvent('qb-truckrobbery:server:StartJob', startJob)
@@ -150,10 +128,6 @@ end)
 
 RegisterNetEvent('onResourceStop', function(resoucename)
   if GetCurrentResourceName() ~= resoucename then return end
-  deleteAllEntities()
-end)
-
-RegisterNetEvent('onResourceStart', function(resoucename)
-  if GetCurrentResourceName() ~= resoucename then return end
-  spawnPed()
+  deleteGuards()
+  deleteTruck()
 end)
