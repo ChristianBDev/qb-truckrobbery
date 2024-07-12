@@ -1,5 +1,3 @@
-QBCore = exports['qb-core']:GetCoreObject()
-
 Config = Config or {}
 
 Config.StartPed = {
@@ -22,26 +20,15 @@ Config.Truck = {
 Config.Guards = {
   number = 6,
   model = `MP_M_SecuroGuard_01`,
-  weapon = 'weapon_pistol',
+  weapon = 'weapon_smg',
 }
 
 Config.PoliceAlert = function()
-  TriggerServerEvent('police:server:policeAlert', Lang:t('info.palert'))
-  -- Add blip
+  TriggerServerEvent('police:server:policeAlert', Lang:t('info.palert')) -- Add blip
 end
 
-Config.Minigames = {
-  ['Unlock Doors'] = function()
-    local success = exports['qb-minigames']:Skillbar() -- calling like this will set difficulty and keys to press
-    if success then
-      return true
-    else
-      return false
-    end
-  end
-}
-
-Config.Route = { -- Locations the truck should go to and stop at.
+Config.EnableDriving = true --If true, the truck will drive to the route points.
+Config.Route = {            -- Locations the truck should go to and stop at.
   vector3(151.17, -1027.81, 29.28),
   vector3(317.31, -266.13, 53.85),
   vector3(-344.33, -30.7, 47.42),

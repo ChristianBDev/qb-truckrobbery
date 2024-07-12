@@ -11,7 +11,7 @@ truckStatus = {
       label = Lang:t('info.unlockdoors'),
       canInteract = function(entity)
         if entity ~= truck then return false end
-        if Entity(truck).state.status ~= 'guarded' then return false end
+        if GetEntityFromStateBagName('truck') ~= 'guarded' then return false end
         return true
       end,
     },
@@ -33,7 +33,7 @@ truckStatus = {
       label = Lang:t('info.plantbomb'),
       canInteract = function(entity)
         if entity ~= truck then return false end
-        if Entity(truck).state.status ~= 'unguarded' then return false end
+        if GetEntityFromStateBagName('truck') ~= 'unguarded' then return false end
         return isAtRearOfTruck()
       end,
     },
@@ -49,7 +49,7 @@ truckStatus = {
       icon = 'fas fa-truck-loading',
       label = Lang:t('info.loottruck'),
       canInteract = function()
-        if Entity(truck).state.status ~= 'exploded' then return false end
+        if GetEntityFromStateBagName('truck') ~= 'exploded' then return false end
         return isAtRearOfTruck()
       end,
     },

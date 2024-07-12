@@ -183,7 +183,6 @@ RegisterNetEvent('qb-truckrobbery:client:StartMission', function(activeJob, truc
   truckSpawn:onPlayerInOut(function(isPointInside)
     if isPointInside then
       QBCore.Functions.TriggerCallback('qb-truckrobbery:server:spawnTruck', function(truckNetId)
-        updateTruckStatus('guarded')
         local truck = NetworkGetEntityFromNetworkId(truckNetId)
         local driver = GetPedInVehicleSeat(truck, -1)
 
@@ -199,8 +198,11 @@ RegisterNetEvent('qb-truckrobbery:client:StartMission', function(activeJob, truc
         BeginTextCommandSetBlipName('STRING')
         AddTextComponentString('Armored Truck')
         EndTextCommandSetBlipName(TruckBlip)
-        -- TaskVehicleDriveToCoordLongrange(driver, truck, Config.Route[math.random(1, #Config.Route)], 80.0, 786603)
+        if Config.EnableDriving then
+          TaskVehicleDriveToCoordLongrange(driver, truck, Config.Route[math.random(1, #Config.Route)], 80.0, 786603)
+        end
         SetVehicleEngineOn(truck, true, true, false)
+        truck = GetEntityFromStateBagName('truck')
         addTargetToTruck(truck)
       end, truckCoords)
     else

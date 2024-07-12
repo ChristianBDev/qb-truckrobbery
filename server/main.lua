@@ -1,7 +1,7 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 local activeJob = false
 local onCooldown = false
-local startPed, startPedNetId, truck, truckNetId
+local truck, truckNetId
 local guards = {}
 local truckStatus
 
@@ -81,7 +81,8 @@ end
 
 local function FinishMission()
   activeJob = false
-  deleteAllEntities()
+  deleteGuards()
+  deleteTruck()
   StartCooldown()
 end
 
