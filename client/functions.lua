@@ -204,14 +204,10 @@ RegisterNetEvent('qb-truckrobbery:client:StartMission', function(activeJob, truc
         addTargetToTruck(truck)
       end, truckCoords)
     else
-      return QBCore.Functions.Notify(Lang:t('info.truck_spawn'), 'success')
+      return QBCore.Functions.Notify(Lang:t('error.truck_spawn'), 'error')
     end
   end)
   truckSpawn = isPointInside
-end)
-
-RegisterCommand('test', function()
-  TriggerServerEvent('qb-truckrobbery:server:StartJob')
 end)
 
 function setupPed()

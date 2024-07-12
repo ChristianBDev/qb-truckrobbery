@@ -2,7 +2,8 @@ local Translations = {
 	error = {
 		['failed_bomb'] = 'You failed to plant the bomb!',
 		['failed_doors'] = 'You failed to unlock the doors!',
-		['active_mission'] = 'There is already an active mission or you are on cooldown!'
+		['active_mission'] = 'There is already an active mission or you are on cooldown!',
+		['truck_spawn'] = 'Failed to spawn the truck & guards'
 	},
 	success = {
 		['start_misssion'] = 'You have started a Mission!',
