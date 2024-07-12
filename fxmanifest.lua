@@ -9,7 +9,7 @@ shared_scripts {
   '@qb-core/shared/locale.lua',
   'locales/en.lua',
   'locales/*.lua',
-  'shared/config.lua',
+  'shared/*.lua',
 }
 
 server_scripts {
