@@ -201,8 +201,7 @@ RegisterNetEvent('qb-truckrobbery:client:StartMission', function(activeJob, truc
           TaskVehicleDriveToCoordLongrange(driver, truck, Config.Route[math.random(1, #Config.Route)], 80.0, 786603)
         end
         SetVehicleEngineOn(truck, true, true, false)
-        EjectFrontGuards()
-        -- addTargetToTruck(truck)
+        addTargetToTruck(truck)
       end, truckCoords)
     else
       return QBCore.Functions.Notify(Lang:t('error.truck_spawn'), 'error')

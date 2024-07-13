@@ -37,7 +37,7 @@ QBCore.Functions.CreateCallback('qb-truckrobbery:server:spawnTruck', function(so
   spawnGuards()
   SetVehicleNumberPlateText(truck, plate)
   truckNetId = NetworkGetNetworkIdFromEntity(truck)
-  Entity(truck).state:set('truckstate', TruckState.unguarded, true)
+  Entity(truck).state:set('truckstate', TruckState.guarded, true)
   cb(truckNetId)
 end)
 
@@ -65,7 +65,7 @@ local function startJob()
 end
 
 local function updateTruckStatus(status)
-  local avalableStatus = TruckStates[status]
+  local availableStatus = TruckStates[status]
   Entity(truck).state:set('truckstatus', availableStatus.status, true)
 end
 
