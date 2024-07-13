@@ -65,16 +65,8 @@ local function startJob()
 end
 
 local function updateTruckStatus(status)
-  local avalableStatus = {
-    ['guarded'] = true,
-    ['unguarded'] = true,
-    ['planted'] = true,
-    ['exploded'] = true,
-    ['looted'] = true,
-  }
-  assert(avalableStatus[status], 'Please provide a valid status for truck')
-  truckStatus = status
-  Entity(truck).state:set('status', truckStatus, true)
+  local avalableStatus = TruckStates[status]
+  Entity(truck).state:set('truckstatus', availableStatus.status, true)
 end
 
 function StartCooldown()
