@@ -5,9 +5,15 @@ truckStatus = {
       action = function()
         Config.PoliceAlert()
         EjectFrontGuards()
+        updateTruckStatus('unguarded')
       end,
       icon = 'fas fa-door-open',
-      label = Lang:t('info.unlockdoors')
+      label = Lang:t('info.unlockdoors'),
+      canInteract = function(entity)
+        if entity ~= truck then return false end
+        if Entity(entity).state.truckstate ~= TruckState.guarded then return false end
+        return true
+      end,
     },
   },
 
@@ -17,14 +23,19 @@ truckStatus = {
       action = function()
         faceTruck()
         doPlantAnim()
-        Entity(truck).state:set('truckstate', TruckState.planted, true)
+        updateTruckStatus('planted')
         Wait((Config.Times.plant + Config.Times.fuse) * 1000 or 100)
         explodeTruck()
         EjectRearGuards()
-        Entity(truck).state:set('truckstate', TruckState.exploded, true)
+        updateTruckStatus('exploded')
       end,
       icon = 'fas fa-truck-loading',
-      label = Lang:t('info.plantbomb')
+      label = Lang:t('info.plantbomb'),
+      canInteract = function(entity)
+        if entity ~= truck then return false end
+        if Entity(entity).state.truckstate ~= TruckState.unguarded then return false end
+        return isAtRearOfTruck()
+      end,
     },
   },
 
@@ -33,10 +44,14 @@ truckStatus = {
       action = function()
         faceTruck()
         doLootAnim()
-        Entity(truck).state:set('truckstate', TruckState.looted, true)
+        updateTruckStatus('looted')
       end,
       icon = 'fas fa-truck-loading',
-      label = Lang:t('info.loottruck')
+      label = Lang:t('info.loottruck'),
+      canInteract = function()
+        if Entity(entity).state.truckstate ~= TruckState.exploded then return false end
+        return isAtRearOfTruck()
+      end,
     },
   }
 }
