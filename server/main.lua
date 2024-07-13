@@ -1,4 +1,5 @@
 local QBCore = exports['qb-core']:GetCoreObject()
+local AddStateBagChangeHandler = QBCore.Functions.AddStateBagChangeHandler
 local activeJob = false
 local onCooldown = false
 local startPed, startPedNetId, truck, truckNetId
@@ -8,6 +9,11 @@ local truckStatus
 exports('IsActive', function()
   return activeJob
 end)
+
+local function spawnPed()
+  startPed = CreatePed(4, Config.StartPed.model, Config.StartPed.coords.x, Config.StartPed.coords.y, Config.StartPed.coords.z, Config.StartPed.coords.w, false, true)
+  startPedNetId = NetworkGetNetworkIdFromEntity(startPed)
+end
 
 local function spawnGuards()
   for i = 1, Config.Guards.number < 5 and Config.Guards.number or 4 do
@@ -26,12 +32,12 @@ end
 QBCore.Functions.CreateCallback('qb-truckrobbery:server:spawnTruck', function(source, cb, coords)
   if truck then return end
   local plate = 'ARMD' .. math.random(1000, 9999)
-  truck = CreateVehicle(Config.Truck.model, coords, true, true)
+  truck = CreateVehicleServerSetter(Config.Truck.model, 'automobile', coords, coords.w)
   Wait(100)
   spawnGuards()
   SetVehicleNumberPlateText(truck, plate)
   truckNetId = NetworkGetNetworkIdFromEntity(truck)
-  Entity(truck).state:set('status', 'guarded', true)
+  Entity(truck).state:set('truckstate', TruckState.unguarded, true)
   cb(truckNetId)
 end)
 
@@ -81,7 +87,8 @@ end
 
 local function FinishMission()
   activeJob = false
-  deleteAllEntities()
+  deleteGuards()
+  deleteTruck()
   StartCooldown()
 end
 
@@ -120,6 +127,10 @@ QBCore.Functions.CreateCallback('qb-truckrobbery:server:StartJob', function(sour
   cb(false, startJob())
 end)
 
+QBCore.Functions.CreateCallback('qb-truckrobbery:server:GetPed', function(_, cb)
+  cb(startPedNetId)
+end)
+
 RegisterNetEvent('qb-truckrobbery:server:StartJob', startJob)
 RegisterNetEvent('qb-truckrobbery:server:UpdateTruckStatus', updateTruckStatus)
 RegisterNetEvent('qb-truckrobbery:server:FinishJob', function()
@@ -128,6 +139,12 @@ end)
 
 RegisterNetEvent('onResourceStop', function(resoucename)
   if GetCurrentResourceName() ~= resoucename then return end
+  if DoesEntityExist(startPed) then DeleteEntity(startPed) end
   deleteGuards()
   deleteTruck()
+end)
+
+RegisterNetEvent('onResourceStart', function(resoucename)
+  if GetCurrentResourceName() ~= resoucename then return end
+  spawnPed()
 end)
