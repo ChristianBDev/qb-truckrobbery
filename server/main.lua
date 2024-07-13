@@ -2,7 +2,7 @@ local QBCore = exports['qb-core']:GetCoreObject()
 local AddStateBagChangeHandler = QBCore.Functions.AddStateBagChangeHandler
 local activeJob = false
 local onCooldown = false
-local startPed, startPedNetId, truck, truckNetId
+local truck, truckNetId
 local guards = {}
 local truckStatus
 
@@ -37,7 +37,7 @@ QBCore.Functions.CreateCallback('qb-truckrobbery:server:spawnTruck', function(so
   spawnGuards()
   SetVehicleNumberPlateText(truck, plate)
   truckNetId = NetworkGetNetworkIdFromEntity(truck)
-  Entity(truck).state:set('truckstate', TruckState.unguarded, true)
+  Entity(truck).state:set('truckstate', TruckState.guarded, true)
   cb(truckNetId)
 end)
 
@@ -62,19 +62,6 @@ local function startJob()
     TriggerClientEvent('qb-truckrobbery:client:StartMission', source, activeJob, coords)
     activeJob = true
   end
-end
-
-local function updateTruckStatus(status)
-  local avalableStatus = {
-    ['guarded'] = true,
-    ['unguarded'] = true,
-    ['planted'] = true,
-    ['exploded'] = true,
-    ['looted'] = true,
-  }
-  assert(avalableStatus[status], 'Please provide a valid status for truck')
-  truckStatus = status
-  Entity(truck).state:set('status', truckStatus, true)
 end
 
 function StartCooldown()
@@ -132,7 +119,6 @@ QBCore.Functions.CreateCallback('qb-truckrobbery:server:GetPed', function(_, cb)
 end)
 
 RegisterNetEvent('qb-truckrobbery:server:StartJob', startJob)
-RegisterNetEvent('qb-truckrobbery:server:UpdateTruckStatus', updateTruckStatus)
 RegisterNetEvent('qb-truckrobbery:server:FinishJob', function()
   IssueRewards(source)
 end)

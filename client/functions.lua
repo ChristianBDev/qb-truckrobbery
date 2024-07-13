@@ -7,11 +7,6 @@ function isAtRearOfTruck()
   return #(GetEntityCoords(PlayerPedId()) - GetOffsetFromEntityInWorldCoords(truck, 0.0, -4.0, 0.0)) < 1.0
 end
 
-function updateTruckStatus(state)
-  status = state
-  TriggerServerEvent('qb-truckrobbery:server:UpdateTruckStatus', status)
-end
-
 function loadAnim(dict)
   while not HasAnimDictLoaded(dict) do
     RequestAnimDict(dict)
@@ -237,10 +232,6 @@ function setupPed()
     })
   end)
 end
-
-RegisterCommand('test', function()
-  TriggerServerEvent('qb-truckrobbery:server:StartJob')
-end)
 
 RegisterNetEvent('onResourceStart', function(resoucename)
   if GetCurrentResourceName() ~= resoucename then return end
