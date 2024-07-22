@@ -4,7 +4,7 @@ Armored Truck Robbery For QB-Core
 
 # To-Do
 
--   Fix the truck states
+-   [ ] Add Blip Server Side
 
 # License
 
