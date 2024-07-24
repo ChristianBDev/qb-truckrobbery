@@ -3,6 +3,7 @@ local onCooldown = false
 local Peds = {}
 local Trucks = {}
 local Timeout = {}
+local TruckCoords = Config.Truck.spawnlocations[math.random(1, #Config.Truck.spawnlocations)]
 
 -- Peds
 function Peds.create(self, model, coords)
@@ -36,15 +37,17 @@ function Trucks.create(self, coords)
 	local plate = 'ARMD' .. math.random(1000, 9999)
 	self.truck = CreateVehicleServerSetter(Config.Truck.model, 'automobile', coords.x, coords.y, coords.z, coords.w)
 	Entity(self.truck).state:set('truckState', TruckState.guarded, true)
+	Trucks:blip()
 	SetVehicleDirtLevel(self.truck, 0.0)
-	SetVehicleOnGroundProperly(self.truck)
 	SetVehicleNumberPlateText(self.truck, plate)
-	AddBlipForCoord(GetEntityCoords(self.truck))
-	-- SetBlipSprite(self.blip, 67)t
-	SetVehicleEngineOn(self.truck, true, true, false)
-	SetVehicleDoorsLocked(self.truck, 2)
-	SetVehicleDoorsLockedForAllPlayers(self.truck, true)
 	Wait(500)
+end
+
+function Trucks.blip(self, coords)
+	coords = TruckCoords
+	self.blip = AddBlipForCoord(coords.x, coords.y, coords.z)
+	SetBlipSprite(self.blip, 67)
+	return self.blip
 end
 
 function Trucks.guard(self)
@@ -73,7 +76,7 @@ end
 local function startMission()
 	if Peds:getState() then return end
 	Peds:setState(true)
-	Trucks:create(Config.Truck.spawnlocations[math.random(1, #Config.Truck.spawnlocations)])
+	Trucks:create(TruckCoords)
 	Trucks:guard()
 	Timeout:set()
 end
@@ -105,7 +108,7 @@ function IssueRewards(source)
 		end
 	end
 	Wait(Config.Times.issuedRewardsTimer * 1000)
-	FinishMission()
+	finishMission()
 end
 
 -- Timeouts
