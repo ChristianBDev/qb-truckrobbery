@@ -1,181 +1,142 @@
 local QBCore = exports['qb-core']:GetCoreObject()
+local AddStateBagChangeHandler = QBCore.Functions.AddStateBagChangeHandler
+local activeJob = false
 local onCooldown = false
-local Peds = {}
-local Trucks = {}
-local Timeout = {}
-local TruckCoords = Config.Truck.spawnlocations[math.random(1, #Config.Truck.spawnlocations)]
+local startPed, startPedNetId, truck, truckNetId
+local guards = {}
+local truckStatus
 
-RegisterServerEvent('AttackTransport:akceptujto', function()
-	local copsOnDuty = 0
-	local _source = source
-	local xPlayer = QBCore.Functions.GetPlayer(_source)
-	local accountMoney = xPlayer.PlayerData.money['bank']
-	if ActiveMission == 0 then
-		if accountMoney < Config.ActivationCost then
-			TriggerClientEvent('QBCore:Notify', _source, 'You need ' .. Config.Currency .. '' .. Config.ActivationCost .. ' in the bank to accept the mission')
-		else
-			for _, v in pairs(QBCore.Functions.GetPlayers()) do
-				local Player = QBCore.Functions.GetPlayer(v)
-				if Player ~= nil then
-					if (Player.PlayerData.job.name == 'police' or Player.PlayerData.job.type == 'leo') and Player.PlayerData.job.onduty then
-						copsOnDuty = copsOnDuty + 1
-					end
-				end
-			end
-			if copsOnDuty >= Config.ActivePolice then
-				TriggerClientEvent('AttackTransport:Pozwolwykonac', _source)
-				xPlayer.Functions.RemoveMoney('bank', Config.ActivationCost, 'armored-truck')
-				OdpalTimer()
-			else
-				TriggerClientEvent('QBCore:Notify', _source, 'Need at least ' .. Config.ActivePolice .. ' police to activate the mission.')
-			end
-		end
-	else
-		TriggerClientEvent('QBCore:Notify', _source, 'Someone is already carrying out this mission')
-	end
+exports('IsActive', function()
+  return activeJob
 end)
 
-RegisterServerEvent('qb-armoredtruckheist:server:callCops', function(streetLabel, coords)
-	-- local place = "Armored Truck"
-	-- local msg = "The Alarm has been activated from a "..place.. " at " ..streetLabel
-	-- Why is this unused?
-	TriggerClientEvent('qb-armoredtruckheist:client:robberyCall', -1, streetLabel, coords)
+local function spawnPed()
+  startPed = CreatePed(4, Config.StartPed.model, Config.StartPed.coords.x, Config.StartPed.coords.y, Config.StartPed.coords.z, Config.StartPed.coords.w, false, true)
+  startPedNetId = NetworkGetNetworkIdFromEntity(startPed)
+end
+
+local function spawnGuards()
+  for i = 1, Config.Guards.number < 5 and Config.Guards.number or 4 do
+    local spawnGuard = CreatePedInsideVehicle(truck, 4, Config.Guards.model, i - 2, true, true) -- Change seat val to i - 2
+    while not DoesEntityExist(spawnGuard) do Wait(10) end
+    Wait(100)
+    guards[i] = {
+      id = spawnGuard,
+      netId = NetworkGetNetworkIdFromEntity(spawnGuard),
+      seat = i - 2,
+    }
+  end
+  return guards
+end
+
+QBCore.Functions.CreateCallback('qb-truckrobbery:server:spawnTruck', function(source, cb, coords)
+  if truck then return end
+  local plate = 'ARMD' .. math.random(1000, 9999)
+  truck = CreateVehicleServerSetter(Config.Truck.model, 'automobile', coords, coords.w)
+  Wait(100)
+  spawnGuards()
+  SetVehicleNumberPlateText(truck, plate)
+  truckNetId = NetworkGetNetworkIdFromEntity(truck)
+  Entity(truck).state:set('truckstate', TruckState.guarded, true)
+  cb(truckNetId)
 end)
 
-function OdpalTimer()
-	ActiveMission = 1
-	Wait(Config.ResetTimer * 1000)
-	ActiveMission = 0
-	TriggerClientEvent('AttackTransport:CleanUp', -1)
+local function deleteTruck()
+  if not truck then return end
+  truck = NetworkGetEntityFromNetworkId(truckNetId)
+  if DoesEntityExist(truck) then DeleteEntity(truck) end
+  truck = nil
 end
 
-RegisterServerEvent('AttackTransport:zawiadompsy', function(x, y, z)
-	TriggerClientEvent('AttackTransport:InfoForLspd', -1, x, y, z)
-end)
-
-RegisterServerEvent('AttackTransport:graczZrobilnapad', function()
-	local _source = source
-	local xPlayer = QBCore.Functions.GetPlayer(_source)
-	local bags = math.random(1, 3)
-	local info = {
-		worth = math.random(Config.Payout.Min, Config.Payout.Max)
-	}
-	exports['qb-inventory']:AddItem(_source, 'markedbills', bags, false, info, 'AttackTransport:graczZrobilnapad')
-	TriggerClientEvent('qb-inventory:client:ItemBox', _source, QBCore.Shared.Items['markedbills'], 'add')
-
-	local chance = math.random(1, 100)
-	TriggerClientEvent('QBCore:Notify', _source, 'You took ' .. bags .. ' bags of cash from the van')
-
-	if chance >= 95 then
-		exports['qb-inventory']:AddItem(_source, 'security_card_01', 1, false, false, 'AttackTransport:graczZrobilnapad')
-		TriggerClientEvent('qb-inventory:client:ItemBox', _source, QBCore.Shared.Items['security_card_01'], 'add')
-	end
+local function deleteGuards()
+  if #guards == 0 then return end
+  for i = 1, #guards do
+    if DoesEntityExist(guards[i].id) then DeleteEntity(guards[i].id) end
+  end
 end
 
--- Trucks
-function Trucks.create(self, coords)
-	local plate = 'ARMD' .. math.random(1000, 9999)
-	self.truck = CreateVehicleServerSetter(Config.Truck.model, 'automobile', coords.x, coords.y, coords.z, coords.w)
-	Entity(self.truck).state:set('truckState', TruckState.guarded, true)
-	Trucks:blip()
-	SetVehicleDirtLevel(self.truck, 0.0)
-	SetVehicleNumberPlateText(self.truck, plate)
-	Wait(500)
+local function startJob()
+  if onCooldown then return end
+  if not activeJob then
+    local coords = Config.Truck.spawnlocations[math.random(1, #Config.Truck.spawnlocations)]
+    TriggerClientEvent('qb-truckrobbery:client:StartMission', source, activeJob, coords)
+    activeJob = true
+  end
 end
 
-function Trucks.blip(self, coords)
-	coords = TruckCoords
-	self.blip = AddBlipForCoord(coords.x, coords.y, coords.z)
-	SetBlipSprite(self.blip, 67)
-	return self.blip
+local function updateTruckStatus(status)
+  local availableStatus = TruckStates[status]
+  Entity(truck).state:set('truckstatus', availableStatus.status, true)
 end
 
-function Trucks.guard(self)
-	local temp = {}
-	for i = -1, 2 do
-		local guard = CreatePedInsideVehicle(self.truck, 4, Config.Guards.model, i, true, true)
-		temp[#temp + 1] = guard
-		Wait(100)
-		self.guards = temp
-	end
+function StartCooldown()
+  onCooldown = true
+  SetTimeout(Config.Times.cooldown * 1000, function()
+    onCooldown = false
+    activeJob = false
+  end)
 end
 
-function Trucks.deleteGuard(self)
-	if not self.truck then return end
-	if DoesEntityExist(self.truck) then DeleteEntity(self.truck) end
-	for _, guard in ipairs(self.guards) do
-		DeleteEntity(guard)
-	end
+local function FinishMission()
+  activeJob = false
+  deleteGuards()
+  deleteTruck()
+  StartCooldown()
 end
-
-function Trucks.delete(self)
-	if not self.truck then return end
-	if DoesEntityExist(self.truck) then DeleteEntity(self.truck) end
-end
-
-local function startMission()
-	if Peds:getState() then return end
-	Peds:setState(true)
-	Trucks:create(TruckCoords)
-	Trucks:guard()
-	Timeout:set()
-end
-
-local function finishMission()
-	Peds:setState(false)
-	Trucks:delete()
-	Trucks:deleteGuard()
-	IssueRewards(source)
-end
-
-function IssueRewards(source)
-	local Player = QBCore.Functions.GetPlayer(source)
-	Reward = Config.Rewards
-	local chance = math.random(1, 100)
-
-	if chance >= 85 then
-		exports['qb-inventory']:AddItem(source, 'security_card_01', 1, false)
-		TriggerClientEvent('qb-inventory:client:ItemBox', source, QBCore.Shared.Items['security_card_01'], 'add')
-	end
-	assert(Reward, 'Please check the config file for the rewards table')
-	Player.Functions.AddMoney('cash', Reward.cash)
-	for k, v in pairs(Reward.items) do
-		local info = { worth = v }
-		if k == 'markedbills' then
-			local amount = math.random(1, 5)
-			exports['qb-inventory']:AddItem(source, 'markedbills', amount, false, info)
-			TriggerClientEvent('qb-inventory:client:ItemBox', source, QBCore.Shared.Items['markedbills'], 'add', amount)
-		end
-	end
-	Wait(Config.Times.issuedRewardsTimer * 1000)
-	finishMission()
-end
-
--- Timeouts
-function Timeout.set()
-	SetTimeout(Config.Times.cooldown * 1000, function()
-		onCooldown = true
-	end)
-	onCooldown = false
-end
-
--- Net Events
-RegisterNetEvent('qb-truckrobbery:server:startMission', startMission)
-RegisterNetEvent('qb-truckrobbery:server:finishMission', finishMission)
 
 RegisterNetEvent('qb-truckrobbery:server:RemoveItem', function()
-	local src = source
-	local Player = QBCore.Functions.GetPlayer(src)
-	Player.Functions.RemoveItem(Config.StartItem, 1)
-	TriggerClientEvent('qb-inventory:client:ItemBox', src, QBCore.Shared.Items[Config.StartItem], 'remove')
+  local src = source
+  local Player = QBCore.Functions.GetPlayer(src)
+  Player.Functions.RemoveItem(Config.StartItem, 1)
+  TriggerClientEvent('qb-inventory:client:ItemBox', src, QBCore.Shared.Items[Config.StartItem], 'remove')
 end)
 
-RegisterNetEvent('onResourceStop', function()
-	Peds:delete()
-	Trucks:delete()
-	Trucks:deleteGuard()
+function IssueRewards(source)
+  local Player = QBCore.Functions.GetPlayer(source)
+  Reward = Config.Rewards
+  local chance = math.random(1, 100)
+
+  if chance >= 85 then
+    exports['qb-inventory']:AddItem(source, 'security_card_01', 1, false, 'qb-truckrobbery:server:recieveItem')
+    TriggerClientEvent('qb-inventory:client:ItemBox', source, QBCore.Shared.Items['security_card_01'], 'add')
+  end
+  assert(Reward, 'Please check the config file for the rewards table')
+  Player.Functions.AddMoney('cash', Reward.cash)
+  for k, v in pairs(Reward.items) do
+    local info = { worth = v }
+    if k == 'markedbills' then
+      local amount = math.random(1, 5)
+      exports['qb-inventory']:AddItem(source, 'markedbills', amount, false, info, 'qb-truckrobbery:server:recieveItem')
+      TriggerClientEvent('qb-inventory:client:ItemBox', source, QBCore.Shared.Items['markedbills'], 'add', amount)
+    end
+  end
+  Wait(Config.Times.issuedRewardsTimer * 1000)
+  FinishMission()
+end
+
+QBCore.Functions.CreateCallback('qb-truckrobbery:server:StartJob', function(source, cb)
+  if activeJob then return cb(activeJob) end
+  cb(false, startJob())
 end)
 
-RegisterNetEvent('onResourceStart', function()
-	Peds:create(Config.StartPed.model, Config.StartPed.coords)
+QBCore.Functions.CreateCallback('qb-truckrobbery:server:GetPed', function(_, cb)
+  cb(startPedNetId)
+end)
+
+RegisterNetEvent('qb-truckrobbery:server:StartJob', startJob)
+RegisterNetEvent('qb-truckrobbery:server:UpdateTruckStatus', updateTruckStatus)
+RegisterNetEvent('qb-truckrobbery:server:FinishJob', function()
+  IssueRewards(source)
+end)
+
+RegisterNetEvent('onResourceStop', function(resoucename)
+  if GetCurrentResourceName() ~= resoucename then return end
+  if DoesEntityExist(startPed) then DeleteEntity(startPed) end
+  deleteGuards()
+  deleteTruck()
+end)
+
+RegisterNetEvent('onResourceStart', function(resoucename)
+  if GetCurrentResourceName() ~= resoucename then return end
+  spawnPed()
 end)
